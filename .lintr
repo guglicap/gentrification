@@ -1,0 +1,5 @@
+linters: linters_with_defaults(
+    indentation_linter(indent = 4L, hanging_indent_style = "tidy", assignment_as_infix = TRUE),
+    line_length_linter(120),
+    object_usage_linter = NULL
+    )

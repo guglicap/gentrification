@@ -1,0 +1,10 @@
+.python-version
+_targets
+
+# licensing reasons
+
+# OMI doesn't state dataset licenses
+data/omi
+
+# Eurostat forbids reupload of raw datasets
+data/census.gpkg
