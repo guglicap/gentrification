@@ -21,33 +21,22 @@ map_targets <-
             map_mun, map_build_mun(raw_mun)
         ),
         tar_target(
-            outline_mi, map_extract_mun_poly(map_mun, "MILANO")
-        ),
-        tar_target(
-            outline_bs, map_extract_mun_poly(map_mun, "BRESCIA")
-        ),
-        tar_target(
-            outline_bg, map_extract_mun_poly(map_mun, "BERGAMO")
-        ),
-        tar_target(
-            map_mi,
-            map_generate_milan_submun(raw_mi_submun, outline_mi)
-        ),
-        tar_target(
-            map_bs,
-            map_generate_submun_poly("Brescia", "BS", raw_pointcaps, outline_bs)
-        ),
-        tar_target(
-            map_bg,
-            map_generate_submun_poly("Bergamo", "BG", raw_pointcaps, outline_bg)
-        ),
-        tar_target(
             master_grid,
-            map_build_master_grid(map_mun, map_mi, map_bs, map_bg)
+            map_build_master_grid(map_mun)
         ),
         tar_target(
             export_master_grid,
             map_write_master_grid(master_grid),
             format = "file"
+        ),
+        tar_target(
+            map_geom_ids,
+            {
+                master_grid |>
+                    st_drop_geometry() |>
+                    tibble() |>
+                    select(-prov) |>
+                    distinct()
+            }
         )
     )
