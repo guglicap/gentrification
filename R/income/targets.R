@@ -23,7 +23,7 @@ income_targets <- list(
     tar_target(
         income_bins_cutoff,
         command = {
-            seq(0.1, 0.9, by = 0.1)
+            c(0.5, 0.9)
         }
     ),
     tar_target(
