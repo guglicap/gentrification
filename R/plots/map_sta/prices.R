@@ -24,6 +24,7 @@ static_maps_targets <- c(static_maps_targets, pricemap_targets, tar_target(
         .ct <- .x$contract_type[1]
         .pt <- .x$property_type[1]
 
+        path <- str_glue("figures/pricemaps/{.ct}_{.pt}.pdf")
         .x |>
             ggplot() +
             ggtitle(
@@ -55,8 +56,18 @@ static_maps_targets <- c(static_maps_targets, pricemap_targets, tar_target(
             facet_grid(
                 rows = vars(year),
                 cols = vars(property_status)
-            )
+            ) -> plot
+
+        ggsave(
+            path,
+            plot,
+            device = cairo_pdf,
+            width = 8,
+            height = 8 / 3 * 2
+        )
+        path
     },
     pattern = map(pricemap_groups),
+    format = "file",
     iteration = "list"
 ))
