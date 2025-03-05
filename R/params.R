@@ -1,0 +1,1 @@
+regions <- c("LOMBARDIA")

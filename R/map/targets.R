@@ -1,6 +1,6 @@
 map_raw_files <- list(
     tar_target(
-        raw_mun, "data/limiti_comunali_2020.geojson",
+        raw_mun, "data/mun_it.gpkg",
         format = "file"
     ),
     tar_target(
@@ -21,33 +21,48 @@ map_targets <-
             map_mun, map_build_mun(raw_mun)
         ),
         tar_target(
-            outline_mi, map_extract_mun_poly(map_mun, "MILANO")
+            map_submunicipal_mun_list,
+            command = {
+                income_submunicipal_mun_list
+            }
         ),
         tar_target(
-            outline_bs, map_extract_mun_poly(map_mun, "BRESCIA")
-        ),
-        tar_target(
-            outline_bg, map_extract_mun_poly(map_mun, "BERGAMO")
-        ),
-        tar_target(
-            map_mi,
-            map_generate_milan_submun(raw_mi_submun, outline_mi)
-        ),
-        tar_target(
-            map_bs,
-            map_generate_submun_poly("Brescia", "BS", raw_pointcaps, outline_bs)
-        ),
-        tar_target(
-            map_bg,
-            map_generate_submun_poly("Bergamo", "BG", raw_pointcaps, outline_bg)
+            map_submun_poly_list,
+            command = {
+                submun_polys <- list()
+                purrr::map(
+                    map_submunicipal_mun_list,
+                    \(mun) {
+                        outline <- map_extract_mun_poly(
+                            map_mun, mun
+                        )
+                        map_generate_submun_poly(
+                            mun,
+                            outline$prov,
+                            raw_pointcaps,
+                            outline
+                        )
+                    }
+                )
+            }
         ),
         tar_target(
             master_grid,
-            map_build_master_grid(map_mun, map_mi, map_bs, map_bg)
+            map_build_master_grid(map_mun)
         ),
         tar_target(
             export_master_grid,
             map_write_master_grid(master_grid),
             format = "file"
+        ),
+        tar_target(
+            map_geom_ids,
+            {
+                master_grid |>
+                    st_drop_geometry() |>
+                    tibble() |>
+                    select(-prov) |>
+                    distinct()
+            }
         )
     )

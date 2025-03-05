@@ -4,13 +4,7 @@
 map_build_mun <- function(raw_mun) {
     read_sf(raw_mun) |>
         rmapshaper::ms_simplify(keep = 0.05) |>
-        select(nome_com, sig_pro) |>
-        mutate(nome_com = str_standardize(nome_com), zip = NA) |>
-        relocate(
-            mun = nome_com,
-            zip,
-            prov = sig_pro
-        ) |>
+        filter(reg %in% regions) |>
         st_transform("EPSG:3035")
 }
 
@@ -57,36 +51,25 @@ map_generate_milan_submun <- function(raw_mi_submun, outline_mi) {
 #' @param outline bounds for tesselation, usually municipality polygon
 #'
 #' @example generate_submun_poly("MILANO", "MI", pointcaps, mi_outline)
-map_generate_submun_poly <- function(mun, prov, points, outline) {
+map_generate_submun_poly <- function(mun, points, outline) {
     read_sf(points) |>
-        filter(LAU_NAT == mun) |>
+        filter(str_standardize(LAU_NAT) == mun) |>
         st_transform("EPSG:3035") |>
         (\(.) st_set_geometry(., map_st_voronoi_point(points = .)))() |>
-        select(zip = POSTCODE) |>
-        mutate(
-            mun = mun,
-            prov = prov
-        ) |>
-        st_intersection(outline) |>
-        select(mun, zip, prov, geometry)
+        rename(zip = POSTCODE) |>
+        st_intersection(outline)
 }
 
-
-map_build_master_grid <- function(map_mun, map_mi, map_bs, map_bg) {
+#' Binds municipal map with submunicipal map, assigns IDs
+#' @param map_mun sf object being a municipal level map
+#' @param submun_poly_list named list of bindable objects containing polygons for submunicipalities e.g. list(MILANO = <sf>)
+#'
+#' @return sf object with the combined map, referred to as master_grid usually
+map_build_master_grid <- function(map_mun, submun_poly_list = list()) {
     settings <- sqids::sqids_options(
         min_length = 4
     )
     map_mun |>
-        filter(!mun %in% c(
-            "MILANO",
-            "BERGAMO",
-            "BRESCIA"
-        )) |>
-        bind_rows(
-            map_bg,
-            map_mi,
-            map_bs
-        ) |>
         mutate(
             mun = str_standardize(mun),
             .rn = row_number()
@@ -95,7 +78,12 @@ map_build_master_grid <- function(map_mun, map_mi, map_bs, map_bg) {
         mutate(geom_id = sqids::encode(.rn, settings)) |>
         ungroup() |>
         select(-.rn) |>
-        relocate(mun, zip, prov, geom_id)
+        relocate(mun, prov, geom_id)
+
+    # TODO: implement submunicipal binding
+    map_mun |>
+        filter(!(mun %in% names(submun_poly_list))) |>
+        bind_rows(unname(submun_poly_list))
 }
 
 map_write_master_grid <- function(master_grid, path = "export/master_grid.gpkg") {

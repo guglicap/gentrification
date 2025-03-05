@@ -2,6 +2,10 @@ figure_targets <- append(figure_targets, tar_target(
     figure_income_percentile_delta,
     command = {
         path <- "figures/income_percentile_delta.pdf"
+        n_facets <- income_10y_percentile_delta |>
+            distinct(percentile_bin) |>
+            pull(percentile_bin) |>
+            length()
         left_join(
             master_grid,
             income_10y_percentile_delta,
@@ -55,8 +59,9 @@ figure_targets <- append(figure_targets, tar_target(
                 oob = scales::squish
             ) +
             guides(fill = guide_colorbar(barwidth = 25)) +
-            facet_wrap(~percentile_bin, labeller = label_parsed)
-        ggsave(path, device = cairo_pdf, width = 10, height = 4)
+            facet_wrap(~percentile_bin, labeller = label_parsed, ncol = 3)
+        
+        ggsave(path, device = cairo_pdf, width = 10, height = 4 * ceiling((n_facets / 3)))
         path
     }, format = "file"
 ))
