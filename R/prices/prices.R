@@ -11,7 +11,7 @@ prices_load <- function(prices_year_folder, regions = c("LOMBARDIA")) {
     # carica dati quotazioni (no geom)
     quot <- readr::read_csv2(
         file.path(prices_year_folder, "quotazioni.csv")
-    )
+    ) |> filter(Regione %in% regions)
 
     # genera lista di codici dei comuni presenti nel file quotazioni
     mun_codes <-
@@ -30,7 +30,20 @@ prices_load <- function(prices_year_folder, regions = c("LOMBARDIA")) {
             warning(str_glue("couldn't load zone file {zone_file}"))
             next
         }
-        zone <- sf::read_sf(zone_file) |>
+        # some kml files may be corrupted
+        zone <- tryCatch(
+            {
+                sf::read_sf(zone_file)
+            },
+            error = function(e) {
+                message(str_glue("error reading {zone_file}: {e$message}"))
+                NULL
+            }
+        )
+        if (is.null(zone)) {
+            next
+        }
+        zone <-  zone |>
             dplyr::select(Name, geometry) |>
             mutate(
                 Comune_amm = mun_code,
