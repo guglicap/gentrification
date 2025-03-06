@@ -54,16 +54,16 @@ static_maps_targets <- c(static_maps_targets, pricemap_targets, tar_target(
                 option = "magma"
             ) +
             facet_grid(
-                rows = vars(year),
-                cols = vars(property_status)
+                rows = vars(property_status),
+                cols = vars(year)
             ) -> plot
 
         ggsave(
             path,
             plot,
             device = cairo_pdf,
-            width = 8,
-            height = 8 / 3 * 2
+            width = 15,
+            height = 15 / 6 * 3
         )
         path
     },
