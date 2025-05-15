@@ -1,103 +1,99 @@
 census_raw_files <- list(
-    tar_target(raw_census_path, "data/census.gpkg", format = "file")
+    tar_target(raw_census_path, "data/istat-raw/pop_01_19.csv", format = "file")
 )
 
 census_targets <- list(
     tar_target(
-        census_interpolated,
-        census_interpolate(master_grid, raw_census_path)
+        census_raw,
+        {
+            read_delim_chunked(
+                raw_census_path,
+                callback = DataFrameCallback$new(census_read_callback),
+                delim = "|"
+            )
+        }
     ),
     tar_target(
-        export_census,
-        census_write(census_interpolated),
-        format = "file"
-    ),
-    tar_target(
-        census_10y_delta,
-        command = {
-            census_interpolated |>
-                pivot_wider(
-                    values_from = "population",
-                    names_from = "year",
-                    names_prefix = "pop_"
+        census_raw_agebins,
+        {
+            census_raw |>
+                filter(ETA1 != "TOTAL") |>
+                mutate(
+                    ETA1 = as.integer(str_remove(ETA1, "[A-Z_]+"))
                 ) |>
-                group_by(mun, zip, prov, geom_id) |>
-                summarise(pop_delta_rel = (pop_2021 - pop_2011) / pop_2011)
+                mutate(age_group = cut(ETA1,
+                    breaks = c(
+                        0, 18, 35, 50, 65, 100, +Inf
+                    ),
+                    right = FALSE
+                ))
         }
     ),
     tar_target(
-        census_ranked,
-        command = {
-            census_interpolated |>
-                group_by(year, mun) |>
-                summarise(population = sum(population, na.rm = TRUE)) |>
-                mutate(rank = rank(-population)) |>
-                ungroup()
-        }
-    ),
-    tar_target(
-        census_rankdelta,
-        command = {
-            census_ranked |>
-                arrange(year) |>
-                group_by(mun) |>
-                filter(n() == 2) |>
-                mutate(rank_delta = diff(rank)) |>
-                filter(year == 2011) |>
-                select(-year) |>
-                rename(pop_2011 = population) |>
+        census_agebins_tidied,
+        {
+            census_raw_agebins |>
+                select(
+                    -`Tipo dato`,
+                    -`Classe di età`,
+                    -`Seleziona periodo`,
+                    -`Flag Codes`,
+                    -Flags
+                ) |>
+                group_by(
+                    ITTER107, Territorio, TIME, age_group, TIPO_DATO15
+                ) |>
+                summarise(Value = sum(Value, na.rm = TRUE)) |>
                 ungroup() |>
-                mutate(pop_2011 = log10(pop_2011))
+                pivot_wider(
+                    names_from = TIPO_DATO15,
+                    values_from = Value
+                )
+        }
+    ),
+    tar_target(census_agetotal_tidied, {
+        census_raw |>
+            filter(ETA1 == "TOTAL") |>
+            select(
+                -`Tipo dato`,
+                -`Classe di età`,
+                -`Seleziona periodo`,
+                -`Flag Codes`,
+                -Flags
+            ) |>
+            pivot_wider(
+                names_from = TIPO_DATO15,
+                values_from = Value
+            )
+    }),
+    tar_target(
+        census_export_agetotal,
+        {
+            path <- "export/census_agetotal.csv"
+            census_agetotal_tidied |> write_csv(path)
+            path
+        }
+    ),
+    tar_target(
+        census_export_agebins,
+        {
+            path <- "export/census_agebins.csv"
+            census_agebins_tidied |> write_csv(path)
+            path
         }
     )
 )
 
-#' Interpolate census data from Eurostat GISCO grid over master_grid
-#' @param master_grid master-grid object (sf)
-#' @param raw_census GISCO grid file path
-#'
-#' @return an sf object with population estimates for years 2011 and 2021 referenced to the master-grid
-census_interpolate <- function(master_grid, raw_census_path) {
-    census <- read_sf(raw_census_path) |>
-        select(
-            GRD_ID,
-            starts_with("TOT_P")
-        )
-    master_grid <- master_grid |>
-        mutate(
-            ID = paste(mun, zip)
-        )
-    interpolated <- aw_interpolate(
-        master_grid,
-        tid = ID,
-        source = census,
-        sid = GRD_ID,
-        extensive = c(
-            "TOT_P_2011",
-            "TOT_P_2021"
-        )
-    ) |>
-        select(-ID)
-
-    pivoted <- interpolated |>
-        pivot_longer(
-            cols = starts_with("TOT_P"),
-            names_to = "year",
-            names_prefix = "TOT_P_",
-            values_to = "population"
+census_read_callback <- function(x, pos) {
+    x |>
+        filter(
+            SEXISTAT1 == 9,
+            CITTADINANZA == "TOTAL"
         ) |>
-        mutate(
-            year = as.numeric(year),
-            population = round(population)
+        select(
+            -SEXISTAT1,
+            -Sesso,
+            -Cittadinanza,
+            -CITTADINANZA
         )
-
-    pivoted
-}
-
-census_write <- function(census_interpolated, to = "export/census.gpkg") {
-    census_interpolated |> sf::st_write(
-        dsn = to,
-        delete_dsn = TRUE, layer = "census"
-    )
-    return(to)
 }
