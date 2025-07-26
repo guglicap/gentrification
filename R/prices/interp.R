@@ -35,7 +35,7 @@ prices_interpolate <- function(prices_intersected_pop, prices_tidied) {
         by = join_by(omi_mun_code, omi_zone, year)
     ) |>
         group_by(
-            mun, zip, prov, year, geom_id,
+            mun,  prov, year, geom_id,
             property_type, property_status, contract_type
         ) |>
         summarise(

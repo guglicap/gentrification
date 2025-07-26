@@ -11,81 +11,27 @@ prices_load <- function(prices_year_folder, regions = c("LOMBARDIA")) {
     # carica dati quotazioni (no geom)
     quot <- readr::read_csv2(
         file.path(prices_year_folder, "quotazioni.csv")
-    ) |> filter(Regione %in% regions)
-
-    # genera lista di codici dei comuni presenti nel file quotazioni
-    mun_codes <-
-        quot |>
-        dplyr::distinct(Comune_amm) |>
-        dplyr::pull(Comune_amm)
-
-    zones_dir <- file.path(prices_year_folder, "zone")
-
-    # crea lista zone
-    zones <- list()
-    # carica zone
-    for (mun_code in mun_codes) {
-        zone_file <- file.path(zones_dir, str_glue("{mun_code}.kml"))
-        if (!file.exists(zone_file)) {
-            warning(str_glue("couldn't load zone file {zone_file}"))
-            next
-        }
-        # some kml files may be corrupted
-        zone <- tryCatch(
-            {
-                sf::read_sf(zone_file)
-            },
-            error = function(e) {
-                message(str_glue("error reading {zone_file}: {e$message}"))
-                NULL
-            }
-        )
-        if (is.null(zone)) {
-            next
-        }
-        zone <-  zone |>
-            dplyr::select(Name, geometry) |>
-            mutate(
-                Comune_amm = mun_code,
-                Zona = str_match(Name, "Zona OMI (.+)")[, 2]
-            ) |>
-            # ignora asse z
-            sf::st_zm(drop = TRUE)
-
-        zones[[length(zones) + 1]] <- zone
-    }
-
-    # unisci lista
-    dplyr::bind_rows(zones) -> zones
+    )
 
     quot |>
         dplyr::select(
             Comune_descrizione,
             Comune_amm,
+            Comune_ISTAT,
             Zona,
             Descr_Tipologia,
             Stato,
             starts_with("Compr"),
             starts_with("Loc")
-        ) -> quot
-
-    dplyr::inner_join(
-        quot, zones,
-        dplyr::join_by(Comune_amm, Zona)
-    ) |>
-        dplyr::mutate(
-            year = year,
-            id = paste0(Comune_amm, " - ", Zona)
         ) |>
-        sf::st_sf() |>
-        sf::st_transform("EPSG:3035") |>
-        sf::st_make_valid() |>
-        sf::st_cast()
+        mutate(
+            year = year,
+        ) -> quot
 }
 
 prices_tidy <- function(prices_raw) {
     prices_raw |>
-        st_sf() |>
+        tibble() |>
         mutate(
             sales = 0.5 * (Compr_min + Compr_max),
             rents = 0.5 * (Loc_min + Loc_max)
@@ -96,10 +42,14 @@ prices_tidy <- function(prices_raw) {
                 "\\s", "_"
             ),
             property_status = Stato,
-            mun = str_standardize(Comune_descrizione)
+            mun = str_standardize(Comune_descrizione),
+            mun_code = as.double(
+                str_sub(Comune_ISTAT, start = -6, end = -1)
+            )
         ) |>
         select(
             mun,
+            mun_code,
             omi_zone = Zona,
             omi_mun_code = Comune_amm,
             year,
@@ -114,4 +64,19 @@ prices_tidy <- function(prices_raw) {
             values_to = "property_avg_price"
         ) |>
         filter(!is.na(property_avg_price))
+}
+
+prices_aggregate_mun <- function(prices_tidied, map_geom_ids) {
+    prices_tidied |>
+        mutate(omi_zone = str_sub(omi_zone, 1, 1)) |>
+        filter(omi_zone %in% c(
+            "B", "C", "D", "E"
+        )) |>
+        group_by(
+            mun, mun_code, year, property_type, property_status, contract_type
+        ) |>
+        summarise(
+            property_avg_price = median(property_avg_price, na.rm = TRUE)
+        ) |>
+        ungroup()
 }

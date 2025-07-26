@@ -12,3 +12,14 @@ data/census.gpkg
 
 # huge istat raw datasets
 data/istat-raw/
+
+# mun codes xlsx
+data/mun_codes/*.xlsx
+
+# transit matrix raw
+data/MATRICE PENDOLARISMO 2011
+
+# transit matrix, needs LFS, can't be bothered right now
+# TODO: add LFS
+
+data/mobility/matrix_pendo2011.txt

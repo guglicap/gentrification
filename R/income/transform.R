@@ -2,9 +2,8 @@ income_extract_frequencies <- function(income_raw) {
     income_raw |>
         select(
             mun,
-            zip,
+            mun_code,
             year,
-            geom_id,
             starts_with("Reddito complessivo") &
                 contains("frequenza")
         )

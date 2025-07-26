@@ -9,11 +9,8 @@ income_get_years <- function(irpef_raw_folder) {
 #' @param regions keep only data about these regions
 income_load <- function(irpef_raw_year_folder, geom_ids, merge_list, rename_list, regions = c("LOMBARDIA")) {
     income_mun <- readr::read_csv2(file.path(irpef_raw_year_folder, "comunali.csv")) |>
-        income_preprocess(regions) |>
-        income_merge_mun(merge_list) |>
-        income_rename_mun(rename_list) |>
-        mutate(zip = NA) |>
-        left_join(geom_ids, by = join_by(mun, zip))
+        income_preprocess(regions)
+    income_mun
 }
 
 #' Extract income bins frequencies from data and converts them to a tidy format
@@ -36,7 +33,7 @@ income_tidy_frequencies <- function(income_raw) {
             r.start = as.numeric(r.start),
             r.end = as.numeric(r.end)
         ) |>
-        arrange(mun, zip, r.end) |>
+        arrange(mun, r.end) |>
         tidyr::replace_na(
             list(freq = 0)
         )

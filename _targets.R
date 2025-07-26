@@ -23,9 +23,12 @@ c(
     income_targets,
     prices_raw_files,
     prices_targets,
-    zipf_targets,
-    scale_laws_targets,
-    plots_utils_targets,
-    figure_targets,
-    static_maps_targets
+    # zipf_targets,
+    # scale_laws_targets,
+    # plots_utils_targets,
+    # figure_targets,
+    # static_maps_targets,
+    mobility_targets,
+    mun_codes_targets,
+    incpoprent_targets
 )

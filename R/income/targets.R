@@ -68,7 +68,7 @@ income_targets <- list(
     ),
     tar_target(
         income_raw,
-        income_load(income_years, map_geom_ids, income_merge_list, income_rename_list),
+        income_load(income_years, map_geom_ids, mun_updates_11_21, income_rename_list),
         pattern = map(income_years)
     ),
     tar_target(
@@ -91,13 +91,13 @@ income_targets <- list(
         format = "file"
     ),
     tar_target(
-        income_10y_percentile_delta,
+        income_mun_median,
         command = {
-            income_percentile_pop |>
-                group_by(mun, zip, geom_id, percentile_bin) |>
-                filter(year %in% c(2021, 2011)) |>
-                arrange(year) |>
-                reframe(delta_bin_pop = diff(bin_pop))
+            income_tidyfreqs |>
+                nest_by(mun, mun_code, year) |>
+                mutate(r.median = income_calc_r_cutoff(data, 0.5)) |>
+                select(-data) |>
+                ungroup()
         }
     )
 )
