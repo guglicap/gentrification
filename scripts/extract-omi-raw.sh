@@ -7,8 +7,11 @@ OMI_BASE_DIR="data/omi"
 FILENAME_VALORI="quotazioni.csv"
 ZONE_DIR="zone"
 
+warn() {
+    printf "\e[38;5;208m%s\e[0m\n" "$1"
+}
 
-type -p unzip > /dev/null || {
+type -p unzip >/dev/null || {
     printf "unzip needed to run this script\n"
     exit 2
 }
@@ -49,11 +52,19 @@ mkdir -p "${DEST_DIR}/${ZONE_DIR}"
 if [[ -e $data_file ]]; then
     read -p "${data_file} exists. Overwrite? (y/n): " response
     if [[ $response == "y" ]]; then
-        printf "%s" "$DATA" > "$data_file"
+        printf "%s" "$DATA" >"$data_file" || {
+            warn "warning: prices extraction failed"
+        }
     fi
+else
+    printf "%s" "$DATA" >"$data_file" || {
+        warn "warning: prices extraction failed"
+    }
 fi
 
-unzip "$1" "*.kml" -d "${DEST_DIR}/${ZONE_DIR}" || exit $?
+unzip "$1" "*.kml" -d "${DEST_DIR}/${ZONE_DIR}" || {
+    warn "warning: zone extraction failed"
+}
 
 read -p "extraction done. want to remove raw file $1? (y/n): " response
 if [[ $response == "y" ]]; then

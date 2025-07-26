@@ -48,6 +48,8 @@ data/omi
     └── zone
 ```
 
+For convenience, a script is provided to convert from the downloaded zip file to the desired folder structure. The script can be found in `scripts/extract-omi-raw.sh` and is documented.
+
 ### Income data
 Raw income data are provided by "Ministero dell'Economia e delle Finanze" under [CC-BY-3.0-IT](https://creativecommons.org/licenses/by/3.0/it/) license on [their OpenData](https://www1.finanze.gov.it/finanze/analisi_stat/public/index.php?opendata=yes) page.
 As such, raw income data is already available in the `data` folder and doesn't need manual intervention.
@@ -58,8 +60,9 @@ Should one desire to add more data, here is the expected folder structure:
 data/Redditi
 ├── 2011 # subfolders corresponding to years
 │   ├── comunali.csv # municipal income data
-│   └── subcomunali.csv # submunicipal income data
 ```
+
+Some older datasets as downloaded from the website above will cause the pipeline to fail because they're encoded using `ISO-8859-1` instead of `UTF-8`. Please take care of conversion before running the pipeline.
 
 ## Interpolated datasets
 Interpolated datasets are available in the `export` folder.
