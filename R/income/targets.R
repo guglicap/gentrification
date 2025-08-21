@@ -82,15 +82,6 @@ income_targets <- list(
         pattern = map(income_tidyfreqs)
     ),
     tar_target(
-        export_percentile_pop,
-        command = {
-            path <- file.path("export", "percentile_pop.csv")
-            readr::write_csv(income_percentile_pop, path)
-            path
-        },
-        format = "file"
-    ),
-    tar_target(
         income_mun_median,
         command = {
             income_tidyfreqs |>
@@ -102,4 +93,39 @@ income_targets <- list(
     )
 )
 
-income_targets <- c(income_targets, income_params)
+income_outputs <- list(
+    tar_target(
+        export_percentile_pop,
+        command = {
+            path <- file.path("export", "percentile_pop.csv")
+            readr::write_csv(income_percentile_pop, path)
+            path
+        },
+        format = "file"
+    ),
+    tar_target(
+        export_income_mun_median,
+        command = {
+            path <- file.path("export", "income_median.csv")
+            readr::write_csv(income_mun_median, path)
+            path
+        },
+        format = "file"
+    ),
+    tar_target(
+        export_income,
+        command = {
+            income <- full_join(
+                income_percentile_pop,
+                income_mun_median,
+                by = join_by(mun, mun_code, year)
+            )
+            path <- file.path("export", "income.csv")
+            readr::write_csv(income, path)
+            path
+        },
+        format = "file"
+    )
+    )
+
+income_targets <- c(income_targets, income_params, income_outputs)

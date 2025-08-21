@@ -17,5 +17,6 @@ income_preprocess <- function(income, regions = c("LOMBARDIA")) {
                 .x, "Ammontare$", "Ammontare in euro"
             )
         ) |>
-        dplyr::mutate(mun = str_standardize(mun))
+        dplyr::mutate(mun = str_standardize(mun)) |>
+        dplyr::filter(mun_code != 0) # ignore "MANCANTE/ERRATA" region, introduced in 2019
 }
