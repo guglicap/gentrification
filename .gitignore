@@ -23,3 +23,7 @@ data/MATRICE PENDOLARISMO 2011
 # TODO: add LFS
 
 data/mobility/matrix_pendo2011.txt
+
+# raw income data
+
+data/redditi-raw
