@@ -10,7 +10,7 @@ income_get_years <- function(irpef_raw_folder) {
 income_load <- function(irpef_raw_year_folder, merge_list, rename_list) {
     income_submun <- readr::read_csv2(file.path(irpef_raw_year_folder, "subcomunali.csv")) |>
         income_preprocess(regions) |>
-        rename(zip = CAP)
+        rename(zip = CAP, prov = `Sigla Provincia`)
     
     exclude <- income_submun |>
         distinct(mun) |>
@@ -21,7 +21,7 @@ income_load <- function(irpef_raw_year_folder, merge_list, rename_list) {
         income_merge_mun(merge_list) |>
         income_rename_mun(rename_list) |>
         filter(!(mun %in% exclude)) |>
-        mutate(zip = NA)
+        mutate(zip = NA, prov = `Sigla Provincia`)
 
     bind_rows(income_mun, income_submun)
 }
@@ -44,9 +44,9 @@ income_tidy_frequencies <- function(income_raw) {
         ) |>
         dplyr::mutate(
             r.start = as.numeric(r.start),
-            r.end = as.numeric(r.end)
+            r.end = (as.numeric(r.end) - 1)
         ) |>
-        arrange(mun, zip, r.end) |>
+        arrange(mun, zip, prov, r.end) |>
         tidyr::replace_na(
             list(freq = 0)
         )

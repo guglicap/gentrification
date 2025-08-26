@@ -14,12 +14,12 @@ map_build_mun <- function(raw_mun) {
 #' @param points The centroids for Voronoi tesselation
 #'
 #' @return A vector of polygons, computed from the input points, in the same order as the input
-map_st_voronoi_point <- function(points) {
+map_st_voronoi_point <- function(points, envelope) {
     if (!all(st_geometry_type(points) == "POINT")) {
         stop("Input not  POINT geometries")
     }
     g <- st_combine(st_geometry(points)) # crea oggetto multipoint per voronoi
-    v <- st_voronoi(g)
+    v <- st_voronoi(g, envelope = envelope)
     # estrai singole feature da collection
     v <- st_collection_extract(v)
     # ripristina ordine (ordine dei poligoni ora è lo stesso dei punti)
@@ -38,10 +38,10 @@ map_extract_mun_poly <- function(map_mun, extract_mun) {
 map_generate_milan_submun <- function(raw_mi_submun, outline_mi) {
     read_sf(raw_mi_submun) |>
         select(zip = CAP, geometry) |>
-        mutate(mun = "MILANO", prov = "MI") |>
+        mutate(mun = "MILANO") |>
         st_transform("EPSG:3035") |>
         st_intersection(outline_mi) |>
-        select(mun, zip, prov)
+        select(mun, zip)
 }
 
 #' Generates sunmunicipal polygons from Voronoi tesselation
@@ -51,13 +51,14 @@ map_generate_milan_submun <- function(raw_mi_submun, outline_mi) {
 #' @param outline bounds for tesselation, usually municipality polygon
 #'
 #' @example generate_submun_poly("MILANO", "MI", pointcaps, mi_outline)
-map_generate_submun_poly <- function(mun, points, outline) {
+map_generate_submun_poly <- function(target_mun, points, outline) {
+
     read_sf(points) |>
-        filter(str_standardize(LAU_NAT) == mun) |>
+        filter(mun == target_mun) |>
         st_transform("EPSG:3035") |>
-        (\(.) st_set_geometry(., map_st_voronoi_point(points = .)))() |>
-        rename(zip = POSTCODE) |>
-        st_intersection(outline)
+        (\(.) st_set_geometry(., map_st_voronoi_point(points = ., envelope = st_geometry(outline))))() |>
+        st_intersection(outline) |>
+        select(zip, mun, prov, reg)
 }
 
 #' Binds municipal map with submunicipal map, assigns IDs
@@ -69,6 +70,11 @@ map_build_master_grid <- function(map_mun, submun_poly_list = list()) {
     settings <- sqids::sqids_options(
         min_length = 4
     )
+    # TODO: implement submunicipal binding
+    map_mun |>
+        filter(!(mun %in% names(submun_poly_list))) |>
+        bind_rows(unname(submun_poly_list)) -> map_mun
+
     map_mun |>
         mutate(
             mun = str_standardize(mun),
@@ -78,12 +84,8 @@ map_build_master_grid <- function(map_mun, submun_poly_list = list()) {
         mutate(geom_id = sqids::encode(.rn, settings)) |>
         ungroup() |>
         select(-.rn) |>
-        relocate(mun, prov, geom_id)
+        relocate(mun, prov, reg, zip, geom_id)
 
-    # TODO: implement submunicipal binding
-    map_mun |>
-        filter(!(mun %in% names(submun_poly_list))) |>
-        bind_rows(unname(submun_poly_list))
 }
 
 map_write_master_grid <- function(master_grid, path = "export/master_grid.gpkg") {

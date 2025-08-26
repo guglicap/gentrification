@@ -9,7 +9,7 @@ income_params <- list(
     tar_target(
         income_bins_cutoff,
         command = {
-            seq(0.5, 0.9)
+            c(0.5, 0.9)
         }
     ),
     tar_target(
@@ -84,16 +84,10 @@ income_targets <- list(
     tar_target(income_georef,
         command = {
             income_raw |>
-                left_join(map_geom_ids, by = join_by(mun, zip))
+                left_join(map_geom_ids, by = join_by(mun, prov, zip))
         },
         pattern = map(income_raw)
     ),
-    tar_target(
-        income_bins_cutoff,
-        command = {
-            c(0.5, 0.9)
-        }
-    ), 
     tar_target(
         income_tidyfreqs,
         income_tidy_frequencies(income_georef),
@@ -117,7 +111,7 @@ income_targets <- list(
         income_10y_percentile_delta,
         command = {
             income_percentile_pop |>
-                group_by(mun, zip, geom_id, percentile_bin) |>
+                group_by(mun, prov, zip, geom_id, percentile_bin) |>
                 filter(year %in% c(2021, 2011)) |>
                 arrange(year) |>
                 reframe(delta_bin_pop = diff(bin_pop))

@@ -4,26 +4,26 @@ figure_targets <- append(figure_targets, tar_target(
         path <- "figures/income_static.pdf"
         .x <- income_percentile_pop |>
             left_join(
-                master_grid,
-                by = join_by(mun, zip)
+                master_grid |> select(geom_id),
+                by = join_by(geom_id)
             ) |>
             filter(
                 year %in% c(2021, 2011)
             ) |>
             st_sf() |>
             mutate(
-                bin_pop = (bin_pop - median(bin_pop)) / sd(bin_pop),
+                bin_pop = (bin_pop - median(bin_pop, na.rm = TRUE)) / sd(bin_pop, na.rm = TRUE),
                 .by = percentile_bin
             )
         .x |>
             ggplot() +
             plots_base_theme +
-            geom_sf(
-                data = plots_lom_outline,
-                color = "black",
-                fill = "grey50",
-                linewidth = 1,
-            ) +
+            # geom_sf(
+            #     data = plots_lom_outline,
+            #     color = "black",
+            #     fill = "grey50",
+            #     linewidth = 1,
+            # ) +
             geom_sf(aes(fill = bin_pop), color = NA, linewidth = 0) +
             coord_sf(
                 xlim = c(plots_bbox$xmin, plots_bbox$xmax),
@@ -39,8 +39,8 @@ figure_targets <- append(figure_targets, tar_target(
             scale_fill_viridis_c(
                 name = expression(paste(f[i], " (normalized)")),
                 limits = c(
-                    quantile(.x[["bin_pop"]], 0.005),
-                    quantile(.x[["bin_pop"]], 0.995)
+                    quantile(.x[["bin_pop"]], 0.005, na.rm = TRUE),
+                    quantile(.x[["bin_pop"]], 0.995, na.rm = TRUE)
                 ),
                 option = "magma",
                 oob = scales::squish

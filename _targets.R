@@ -7,8 +7,9 @@ tar_option_set(
     ),
     format = "qs",
     memory = "transient",
-    garbage_collection = TRUE
-    # error = "null"
+    garbage_collection = TRUE,
+    # error = "null",
+    debug = "income_percentile_pop_8e48c232e87d198a"
 )
 
 figure_targets <- list()
@@ -17,15 +18,15 @@ tar_source()
 c(
     map_raw_files,
     map_targets,
-    census_raw_files,
-    census_targets,
+    # census_raw_files,
+    # census_targets,
     income_raw_files,
     income_targets,
-    prices_raw_files,
-    prices_targets,
-    zipf_targets,
-    scale_laws_targets,
-    plots_utils_targets,
-    figure_targets,
-    static_maps_targets
+    # prices_raw_files,
+    # prices_targets,
+    # zipf_targets,
+    # scale_laws_targets,
+    # plots_utils_targets,
+    # figure_targets
+    # static_maps_targets
 )

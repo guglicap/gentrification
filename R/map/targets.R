@@ -10,7 +10,7 @@ map_raw_files <- list(
     ),
     tar_target(
         raw_pointcaps,
-        "data/pointcaps_lom2020/pointcaps_lom2020.shp",
+        "data/pointcaps_it.gpkg",
         format = "file"
     )
 )
@@ -29,7 +29,6 @@ map_targets <-
         tar_target(
             map_submun_poly_list,
             command = {
-                submun_polys <- list()
                 purrr::map(
                     map_submunicipal_mun_list,
                     \(mun) {
@@ -38,17 +37,16 @@ map_targets <-
                         )
                         map_generate_submun_poly(
                             mun,
-                            outline$prov,
                             raw_pointcaps,
                             outline
                         )
                     }
-                )
+                ) |> purrr::set_names(map_submunicipal_mun_list)
             }
         ),
         tar_target(
             master_grid,
-            map_build_master_grid(map_mun)
+            map_build_master_grid(map_mun, map_submun_poly_list)
         ),
         tar_target(
             export_master_grid,
@@ -61,7 +59,6 @@ map_targets <-
                 master_grid |>
                     st_drop_geometry() |>
                     tibble() |>
-                    select(-prov) |>
                     distinct()
             }
         )

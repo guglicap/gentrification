@@ -23,14 +23,15 @@ income_calc_percentile_population <- function(income_tidyfreqs, income_bins_cuto
     q_bins <- cut(q[-length(q)], breaks = q, right = FALSE)
     r <- c(0, income_r_cutoffs, +Inf)
     r_bins <- cut(r[-length(r)], breaks = r, right = FALSE)
+    browser()
     income_tidyfreqs |>
-        nest_by(mun, zip, year, geom_id) |>
+        nest_by(mun, zip, prov, year, geom_id) |>
         reframe(
             percentile_pop = purrr::map_vec(
                 income_r_cutoffs, function(x) income_freq_from_r(data, x)
             )
         ) |>
-        group_by(mun, zip, year, geom_id) |>
+        group_by(mun, zip, prov, year, geom_id) |>
         reframe(
             bin_pop = diff(c(0, percentile_pop, 1)),
             percentile_bin = q_bins,

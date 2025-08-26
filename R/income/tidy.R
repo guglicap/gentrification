@@ -1,4 +1,4 @@
-income_preprocess <- function(income, regions = c("LOMBARDIA")) {
+income_preprocess <- function(income, regions) {
     income |>
         dplyr::mutate(
             Regione = str_standardize(Regione)

@@ -1,1 +1,22 @@
-regions <- c("LOMBARDIA")
+regions <- str_standardize(c(
+  "ABRUZZO",
+  "BASILICATA",
+  "CALABRIA",
+  "CAMPANIA",
+  "EMILIA ROMAGNA",
+  "FRIULI VENEZIA GIULIA",
+  "LAZIO",
+  "LIGURIA",
+  "LOMBARDIA",
+  "MARCHE",
+  "MOLISE",
+  "PIEMONTE",
+  "PUGLIA",
+  "SARDEGNA",
+  "SICILIA",
+  "TOSCANA",
+  "TRENTINO ALTO ADIGE",
+  "UMBRIA",
+  "VALLE D'AOSTA",
+  "VENETO"
+))
