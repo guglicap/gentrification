@@ -1,4 +1,5 @@
 library(targets)
+library(tarchetypes)
 library(sf)
 tar_option_set(
     packages = c("sf", "tidyverse", "areal", "ggplot2"),
@@ -22,6 +23,7 @@ c(
     # census_targets,
     income_raw_files,
     income_targets,
+    dynmodels_targets
     # prices_raw_files,
     # prices_targets,
     # zipf_targets,

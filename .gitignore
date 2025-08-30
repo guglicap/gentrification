@@ -5,8 +5,10 @@ _targets
 
 # OMI doesn't state dataset licenses
 data/omi
+data/omi-raw
 
 # Eurostat forbids reupload of raw datasets
 data/census.gpkg
 
 data/map-raw
+data/MATRICE PENDOLARISMO 2011

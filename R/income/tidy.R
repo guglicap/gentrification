@@ -61,3 +61,16 @@ income_rename_mun <- function(income, rename_list = list()) {
     }
     income
 }
+
+income_extract_frequencies <- function(income_raw) {
+    income_raw |>
+        select(
+            mun,
+            zip,
+            prov,
+            year,
+            geom_id,
+            starts_with("Reddito complessivo") &
+                contains("frequenza")
+        )
+}

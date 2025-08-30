@@ -8,15 +8,20 @@ income_get_years <- function(irpef_raw_folder) {
 #' @param iperf_raw_year_folder income folder for a given year
 #' @param regions keep only data about these regions
 income_load <- function(irpef_raw_year_folder, merge_list, rename_list) {
-    income_submun <- readr::read_csv2(file.path(irpef_raw_year_folder, "subcomunali.csv")) |>
+    income_submun <- readr::read_csv2(
+        file.path(irpef_raw_year_folder, "subcomunali.csv"),
+        na = c("")
+    ) |>
         income_preprocess(regions) |>
         rename(zip = CAP, prov = `Sigla Provincia`)
-    
+
     exclude <- income_submun |>
         distinct(mun) |>
         pull(mun)
 
-    income_mun <- readr::read_csv2(file.path(irpef_raw_year_folder, "comunali.csv")) |>
+    income_mun <- readr::read_csv2(file.path(irpef_raw_year_folder, "comunali.csv"),
+        na = c("")
+    ) |>
         income_preprocess(regions) |>
         income_merge_mun(merge_list) |>
         income_rename_mun(rename_list) |>
