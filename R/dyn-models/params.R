@@ -6,11 +6,7 @@ dynmodels_params <- list(
         }
     ),
     tar_target(
-        dynmodels_grid_w,
-        7
-    ),
-    tar_target(
-        dynmodels_grid_h,
-        7
+        dynmodels_neighborhood_radius,
+        12.5
     )
 )

@@ -1,6 +1,8 @@
 .python-version
 _targets
 
+**__pycache__**
+
 # licensing reasons
 
 # OMI doesn't state dataset licenses

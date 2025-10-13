@@ -1,6 +1,6 @@
 dynmodels_vars <- tidyr::expand_grid(
-    cities = c("MILANO"),
-    years = c(2011, 2021)
+    cities = c("MILANO", "ROMA", "NAPOLI"),
+    years = c(2011, 2015, 2021)
 )
 
 dynmodels_targets <- list(
@@ -13,14 +13,7 @@ dynmodels_targets <- list(
                 neighborhood <- master_grid |>
                     map_select_mun_neighborhood(
                         cities,
-                        limit = dynmodels_grid_w * dynmodels_grid_h
-                    ) |>
-                    mutate(
-                        k = row_number() - 1,
-                    ) |>
-                    mutate(
-                        i = k %% dynmodels_grid_w,
-                        j = floor(as.double(k) / as.double(dynmodels_grid_h))
+                        max_distance_km = dynmodels_neighborhood_radius
                     )
             }
         ),
@@ -35,29 +28,29 @@ dynmodels_targets <- list(
                 pop <- freq |>
                     group_by(year, geom_id) |>
                     income_calc_n_contribs() |>
-                    mutate(percent_contribs = n_contribs / sum(n_contribs)) |>
                     ungroup()
                 freq <- freq |>
-                    income_calc_percentile_population(dynmodels_bins_cutoff) |>
+                    income_calc_percentile_population(dynmodels_bins_cutoff)
+                levels(freq$percentile_bin) <- c("L", "M", "H")
+                freq |>
                     left_join(pop, by = join_by(year, geom_id)) |>
                     left_join(dynmodels_neighborhood, by = join_by(geom_id)) |>
-                    select(i, j, geom_id, year,
-                        cell_percent_of_total_agents = percent_contribs,
-                        percent_of_agent_type = bin_pop,
-                        agent_type = percentile_bin
-                    ) |>
                     mutate(
-                        likelyhood = percent_of_agent_type * cell_percent_of_total_agents
-                    )
-                levels(freq$agent_type) <- c("C", "B", "A")
-                freq
+                        agent_pop = round(bin_pop * n_contribs)
+                    ) |>
+                    select(geom_id, year, pop = agent_pop, cl = percentile_bin)
+                    # pivot_wider(
+                        # names_from = "cl",
+                        # values_from = "P_cl"
+                    # )
             }
         ),
         tar_target(
             dynmodels_export,
             command = {
-                ROOT_DIR <- "export"
-                agent_file <- paste0("dynmodels_agent_dist_", years, "_", cities, ".csv")
+                ROOT_DIR <- "export/sim"
+                dir.create(ROOT_DIR, showWarnings = FALSE, recursive = TRUE)
+                agent_file <- paste0("class_distribution_", cities, "_", years, ".csv")
                 path <- file.path(ROOT_DIR, agent_file)
                 write_csv(
                     dynmodels_agent_dist,
